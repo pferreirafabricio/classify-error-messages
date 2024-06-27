@@ -1,0 +1,5 @@
+{
+    "Company:ERR:0001": "Invalid document number",
+    "Company:ERR:0002": "Company not found",
+    "Company:ERR:0003": "Invalid company name"
+}

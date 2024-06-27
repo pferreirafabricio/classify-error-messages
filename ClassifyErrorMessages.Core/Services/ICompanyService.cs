@@ -5,6 +5,6 @@ namespace ClassifyErrorMessages.Core.Services;
 
 public interface ICompanyService
 {
-    CreateCompanyResponse Create(CreateCompanyRequest request);
-    GetCompanyResponse Get(Guid id);
+    Result<CreateCompanyResponse> Create(CreateCompanyRequest request);
+    Result<GetCompanyResponse> Get(Guid id);
 }

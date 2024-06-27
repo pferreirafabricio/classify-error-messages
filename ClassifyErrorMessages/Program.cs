@@ -1,5 +1,7 @@
-using ClassifyErrorMessages.Application.Requests;
 using ClassifyErrorMessages.Application.Services;
+using ClassifyErrorMessages.Core.ErrorHandling;
+using ClassifyErrorMessages.Core.Requests;
+using ClassifyErrorMessages.Extensions;
 using ClassifyErrorMessages.Infrastructure.Localizer;
 using Microsoft.Extensions.Localization;
 
@@ -10,7 +12,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddLocalization();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSingleton<IStringLocalizerFactory, JsonStringLocalizerFactory>();
-builder.Services.AddTransient<CompanyService>();
+builder.Services.AddSingleton<CompanyService>();
 
 var app = builder.Build();
 
@@ -34,8 +36,30 @@ app.UseRequestLocalization(options =>
     options.FallBackToParentUICultures = true;
 });
 
-app.MapGet("/company/{id}", (CompanyService service, Guid id) => Results.Ok(service.Get(id)));
+app.MapGet("/company/{id}", (CompanyService service, Guid id) =>
+{
+    var result = service.Get(id);
 
-app.MapPost("/company", (CompanyService service, CreateCompanyRequest request) => Results.Ok(service.Create(request)));
+    if (result.IsSuccess)
+        return Results.Ok(result.Value);
+
+    if (result.Error.Code == ErrorConstants.CompanyNotFound)
+        return result.ToProblem(StatusCodes.Status400BadRequest);
+
+    return result.ToProblem();
+});
+
+app.MapPost("/company", (CompanyService service, CreateCompanyRequest request) =>
+{
+    var result = service.Create(request);
+
+    if (result.IsSuccess)
+        return Results.Created($"/company/{result.Value.Id}", result.Value);
+
+    if (result.Error.Code == ErrorConstants.CompanyInvalidDocument || result.Error.Code == ErrorConstants.CompanyInvalidName)
+        return result.ToProblem(StatusCodes.Status400BadRequest);
+
+    return result.ToProblem();
+});
 
 app.Run();

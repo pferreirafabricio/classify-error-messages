@@ -1,4 +1,6 @@
+using ClassifyErrorMessages.Core;
 using ClassifyErrorMessages.Core.Entities;
+using ClassifyErrorMessages.Core.ErrorHandling;
 using ClassifyErrorMessages.Core.Requests;
 using ClassifyErrorMessages.Core.Responses;
 using ClassifyErrorMessages.Core.Services;
@@ -10,33 +12,42 @@ public sealed class CompanyService(IStringLocalizer<CompanyService> localizer) :
 {
     private readonly List<Company> _companies = [];
 
-    public CreateCompanyResponse Create(CreateCompanyRequest request)
+    public Result<CreateCompanyResponse> Create(CreateCompanyRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            throw new ArgumentException(localizer["The name is required."]);
-        }
+            return Result.Failure<CreateCompanyResponse>(
+                new(
+                    ErrorConstants.CompanyInvalidName,
+                    localizer[ErrorConstants.CompanyInvalidName.Identifier]
+                )
+            );
 
         if (string.IsNullOrWhiteSpace(request.Document))
-        {
-            throw new ArgumentException(localizer["The document is required."]);
-        }
+            return Result.Failure<CreateCompanyResponse>(
+                new(
+                    ErrorConstants.CompanyInvalidDocument,
+                    localizer[ErrorConstants.CompanyInvalidDocument.Identifier]
+                )
+            );
 
         var company = new Company(request.Name, request.Document);
         _companies.Add(company);
 
-        return new(company.Id, company.Name, company.Document);
+        return Result.Success<CreateCompanyResponse>(new(company.Id, company.Name, company.Document));
     }
 
-    public GetCompanyResponse Get(Guid id)
+    public Result<GetCompanyResponse> Get(Guid id)
     {
         var company = _companies.FirstOrDefault(x => x.Id == id);
 
         if (company is null)
-        {
-            throw new ArgumentException(localizer["Company not found."]);
-        }
+            return Result.Failure<GetCompanyResponse>(
+                new(
+                    ErrorConstants.CompanyNotFound,
+                    localizer[ErrorConstants.CompanyNotFound.Identifier]
+                )
+            );
 
-        return new(company.Id, company.Name, company.Document);
+        return Result.Success<GetCompanyResponse>(new(company.Id, company.Name, company.Document));
     }
 }
