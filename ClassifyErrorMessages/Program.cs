@@ -3,6 +3,7 @@ using ClassifyErrorMessages.Core.ErrorHandling;
 using ClassifyErrorMessages.Core.Requests;
 using ClassifyErrorMessages.Extensions;
 using ClassifyErrorMessages.Infrastructure.Localizer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,7 +27,7 @@ app.UseHttpsRedirection();
 
 app.UseRequestLocalization(options =>
 {
-    var supportedCultures = new[] { "en", "pt", "pt-BR", "pt-PT", "pt-BR-SP" };
+    var supportedCultures = new[] { "en", "pt", "pt-BR" };
 
     options.SetDefaultCulture(supportedCultures[0])
         .AddSupportedCultures(supportedCultures)
@@ -49,7 +50,7 @@ app.MapGet("/company/{id}", (CompanyService service, Guid id) =>
     return result.ToProblem();
 });
 
-app.MapPost("/company", (CompanyService service, CreateCompanyRequest request) =>
+app.MapPost("/company", (CompanyService service, [FromBody] CreateCompanyRequest request) =>
 {
     var result = service.Create(request);
 
