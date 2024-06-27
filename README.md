@@ -1,5 +1,5 @@
 <h1 align="right">
-  <img src="" width="170px" align="left" />
+  <img src="https://github.com/pferreirafabricio/classify-error-messages/assets/42717522/a000075f-1d59-422c-b920-1b2d9c785dce" width="200px" align="left" />
   Classify Errors Messages
 </h1>
 
@@ -8,7 +8,7 @@
   <br><br>
   <!-- License -->
   <a>
-    <img alt="license url" src="https://img.shields.io/badge/license%20-MIT-1C1E26?style=for-the-badge&labelColor=2E2E2E&color=F03A17">
+    <img alt="license url" src="https://img.shields.io/badge/license%20-MIT-1C1E26?style=for-the-badge&labelColor=2E2E2E&color=42D0FC">
   </a>
 </p>
 
