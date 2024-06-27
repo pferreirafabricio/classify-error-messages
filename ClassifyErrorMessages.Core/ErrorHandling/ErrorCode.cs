@@ -8,7 +8,7 @@ public sealed record ErrorCode(string Namespace, string Category, int Sequence)
         ErrorConstants.ErrorCodeSeparator,
         Namespace,
         Category,
-        Sequence.ToString().PadLeft(4, '0')
+        Sequence.ToString().PadLeft(ErrorConstants.ErrorSequenceMaxWidth, '0')
     );
 
     public override string ToString() => Identifier;

@@ -8,7 +8,6 @@ public static class ResultExtensions
         => Results.Problem(
             title: result.Error.Code.ToString(),
             detail: result.Error.Description,
-            statusCode: statusCode,
-            type: result.Error.Code.Category
+            statusCode: statusCode
         );
 }
