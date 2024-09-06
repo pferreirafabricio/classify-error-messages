@@ -31,233 +31,140 @@ This project was organized in 3 parts:
 
 ## Concepts
 
-`it seems like programmers (myself included) opt to handle errors totally ad-hoc`
+Error handling is a critical part of software development, but programmers often approach it in an ad-hoc manner. Since human error is unavoidable, and errors can occur whenever people or external systems are involved, it's essential to handle them thoughtfully. Effective error handling is as important as the core business logic, ensuring your software continues to function despite unexpected issues.
 
-People are involved every step of the way, and human error is completely unavoidable
+### Types of Errors
 
-If involves people, then we could have errors
-    - like not paying the bill for a third-party service
-    -  I’m talking about anything that could prevent your software from accomplishing what it’s intended to do. That means how you handle errors is just as important as your main business logic.
+#### 1. Exceptional Errors vs. Failures
 
-### Exceptional Errors vs. Failures
+- Exceptional Errors: These are unexpected but possible events. You safeguard against them even if they rarely occur. Examples include:
+  - Running out of memory
+  - Invalid JSON format
+  - Missing database object
 
-To my mind, an exceptional error is something that you don’t really expect to happen but that you safeguard against just in case. Here are a few potential exceptional errors:
+  Exceptional errors should be handled gracefully but are rare enough that frequent occurrence would indicate a design flaw. If errors are expected regularly, they aren't truly exceptional.
 
-The application runs out of memory.
-An id has no corresponding database object.
-A supposedly-JSON string is not in JSON format.
+- Failures: Failures occur when an operation cannot proceed, and they happen more predictably. Examples include:
+  - Incorrect passwords
+  - CDN downtime
+  - Missing device permissions
+  - No network connection
 
-- graceful way to recover
-- That’s why they’re only potential exceptions; if you know they’ll occur frequently, they aren’t exceptional for your system
+  Failures are handled in various ways, such as with error codes, strings, or conditional logic, depending on the situation.
 
-A failure means that an operation can’t continue for some reason.
+#### 2. Internal vs. External Errors
 
-Failures include:
+- Internal Errors: These are caused by flaws in the system's design or logic. Examples include:
+  - Incorrect use of operators
+  - Misconstructed regular expressions
+  - Poorly written tests
 
-A user enters their password incorrectly.
-The app can’t download an image because the CDN is down.
-A user can’t access a feature because a mobile app doesn’t have the right device permissions.
-The app has no network connection.
+  Internal errors should be prevented, not handled at runtime. Unit tests help catch these, and error handling for internal issues should be minimal because the focus should be on prevention.
 
-While exceptions are often handled in programs as specific types (such as an Exception subclass), failures can be represented in many other ways — strings, error codes, conditional statements, etc
+- External Errors: These originate from outside the system, such as from users, third-party services, or dependencies. External errors are inevitable and should be handled with more complexity, as you cannot prevent them. Integration tests are suited for these errors since they involve interactions with the external environment.
 
-### Internal vs. External Errors
+#### Why Differentiating Matters
 
-Internal errors are caused by mistakes in a program’s design or implementation.
+- Internal Errors: Easier to prevent but harder to handle. Unit testing and validation are key.
 
-It’s impossible to handle logic-sourced errors at runtime
+- External Errors: Easier to handle but harder to prevent. These require robust error-handling strategies.
 
-examples:
+### Accuracy and Precision in Error Messaging
 
-Misconstructing a regular expression
-Using the wrong operator (for example, using ++ as a prefix rather than a postfix, or vice versa)
-Writing a test that doesn’t fail when it’s supposed to
+Effective error messaging must be precise and helpful, especially when errors affect the user. The precision of error messages can vary:
 
-External Errors
-These are errors caused by clients and dependencies. (libraries, APIs, people, bots)
+- General: "These credentials are invalid."
+- Specific: "The password is incorrect."
+- Detailed: "The given password is two characters off from the expected password."
 
-In fact, peripheral errors are really the only type of error that it makes sense to handle with any complexity at all. That’s because non-peripheral errors are, by definition, under your control; you should “handle” them by preventing them via tests, validations, etc.
+The goal is to provide users with enough information to understand what went wrong and how to fix it.
 
-Why Does the Difference Matter?
-Internal errors are easier to prevent than to handle.
+### Fit for Use
 
-Unit tests should focus on weeding out internal errors because you’re in total control of inputs and outputs.
-Internal errors should face as little error handling as possible because it’s far better to just prevent them with exploratory testing.
-You typically won’t write much code for handling internal errors because if you can detect them, you might as well prevent them altogether by fixing your code.
-External errors are easier to handle than to prevent.
+The usefulness of error data depends on how it's gathered and used. For failures, error messages must provide enough context for the user to recover from the error. In the case of exceptional errors, messages should enable system recovery, and the error handling strategy should be flexible depending on the programming environment.
 
-External errors can’t be prevented because you simply are not in control of them. You may have some hand in designing an external API or in giving your users easy-to-follow instructions, but it’s only inside of your own program that you have real control.
-Integration tests are well suited for testing external errors against your application.
-External errors should face plenty of error handling because you have no choice other than to let your application break!
+### Shaping Error Data
 
-#### Accuracy and Precision
+Every error should have a well-structured class, error code, and name. Key data fields include:
 
-Precision:
+- Which operation failed
+- Invalid inputs
+- Input values
+- Timestamps
+- User-readable messages
 
-- “These credentials are invalid.”
-- “The password is incorrect.”
-- “The given password is two characters off from the expected password.”
+Logging error data immediately is important, but only necessary information should be passed back to the user.
 
-#### Fit for Its Intended Use
+### Balancing Error Complexity
 
-Usefulness also depends on the reason you’re gathering error data. The most important use is figuring out how you can recover gracefully from the error.
+Error handling must strike a balance between simplicity and necessary complexity:
 
-For a failure, that means you need enough information to distinguish the error state from the “good” state, as well as from other error states. The consumer might also need information about why the failure happened (e.g., invalid fields).
-For an exceptional error, you just need enough information for a consumer to recognize and recover from the error. The way this pattern matching happens will depend on your system. Object-oriented languages typically use class inheritance, whereas a language with a structural type system may use discriminated unions.
+- Simple Approach: Boolean values or basic error codes that signal the occurrence of an error.
+- Complex Approach: Defining classes for every error, which can add unnecessary overhead.
 
-## Shaping Error Data
+Error handling should be complex enough to support error recovery and analytics without overburdening the system.
 
-always error class, error code, and name
+### Error Recovery and Propagation
 
-### Data Fields
+Errors should be logged as soon as they are detected. Recovery strategies include either fixing the issue (like auto-correcting or showing a user-friendly error message) or passing the error along. For instance:
 
-which operation failed, which inputs were invalid, which inputs were given in the first place, the IDs of relevant database objects, the timestamp, user-readable error messages
+- Internal Error: Inform the user about a failure beyond their control and work on future prevention (e.g., bug reporting).
+- External Error: Guide the user on how to resolve the issue or suggest that the problem is outside their influence.
 
-dump as much data as you can immediately
+### Error Categories
 
-Log the timestamp, inputs, etc. as soon as the error is detected, and only pass back the information that the consumer needs.
+#### 1. Background Errors
 
-### Complexity
+Automatically handled, such as a connection timeout with an auto-reconnect feature.
 
-On the simple side, you have Boolean values — either something is an error or it is not
+#### 2. Auto-fixable Errors
 
-Integer error codes can be just as complex as strings because they have no scalar value, i.e. HTTP 403 is not “bigger” than HTTP 400
+Errors that can be corrected without user involvement but should still inform the user of the action taken. Example: An out-of-stock item is removed from a cart.
 
-When using strings to represent errors, you should treat them the same as symbols. (Symbols are values that are equal to themselves and nothing else, and they can’t be compared any other way.) Note that your error data can include non-symbolic strings, but only for carrying extra information (such as messages to the user), not for uniquely identifying the error.
+#### 3. Preventable Errors
 
----
+Errors that can be avoided through design improvements. Examples include:
 
-- Complexity Is a Balancing Act
+- Disabling buttons in insufficient wallet balance scenarios.
+- Providing password setup instructions to prevent validation issues.
 
-integer code, makes development very difficult because you have to keep track of what Error #35 and #73 and #2683 are inside the code
+#### 4. Fixable Errors
 
-On the other extreme, you could represent every single error as a class and return an EmailRegexDidNotMatch object when validating email addresses. But compared to returning false, that’s a lot of unnecessary overhead and maintenance.
+These are inevitable but can be resolved by providing clear, user-friendly error messages. Avoid ambiguous error codes that require users to consult external resources.
 
-Your error data should be just complex enough to accomplish the goals we discussed earlier:
+#### 5. Non-fixable Errors
 
-Recovering from the error
-Recording the right amount of information for forensics and analytics
+For errors that cannot be fixed by the user, error reporting tools should be integrated to allow developers to address them efficiently.
 
----
+#### 6. Design F*ck-ups
 
-That doesn’t mean you need to implement handling in every single function, but you should be very intentional about including or excluding it.
+Critical UX failures, such as app crashes or blank screens, that abruptly terminate the user experience.
 
-You can always pass error data between functions.
+### Best Practices for Error Messaging
 
-If possible, turn the error into a domain type. Represent the error as some data structure that is defined by your application, not another library or application
+#### Primary goals
 
-The place where you detect an error is where you should log it.
+- Make errors easy to discover and map them to where they occur.
+- Prevent errors wherever possible.
+- Keep error messages short, clear, and free of jargon.
+- Avoid blaming the user and focus on offering clear steps for resolution.
 
-If the error is exceptional, you might also want to report it to a third-party service like Sentry
+#### Secondary goals
 
-Either “recover” from the error or pass it along
+- Use real-time validation and system helpers like autocomplete.
+- Automatically fix errors when possible.
+- Group and sequence data logically.
+- Explain unfamiliar concepts clearly.
 
-"recover" = rendering a 404 page for a client. An example of the latter is rendering errors on a web form while retaining the form’s inputs.
+### Exceptions vs. Flow Control
 
-You may also want to log how the recovery will happen (e.g., “undoing x, y, and z” or “retrying…”)
+Exceptions should only be used for exceptional situations, not for normal flow control, as this complicates the code and makes it harder to manage. Instead, handle known errors explicitly and reserve exceptions for cases where recovery is impossible or unknown.
 
-Generally speaking, recovering from internal errors means letting the user know that something out of their control failed and then doing something to make the error less likely in the future (like reporting a bug). Recovering from external errors means telling the user what went wrong and how they can fix it, or that something failed that you may or may not be able to fix.
+### Conclusion
 
----
-
-And yet, errors are often the last thing to get attention during design and tend to be treated like the red-headed stepchild. Or worse yet, they are defined and implemented solely by developers — people who are as far removed as you can get from the end-user regarding error understanding.
-
-0. Background errors
-
-- A good example might be a connection timeout with automatic reconnection.
-
-1. Auto-fixable errors
-
-- An example of an auto-fixable issue would be an item left in a shopping cart that’s no longer in stock. It must be removed from the cart to process the order properly, but it shouldn’t just disappear without any information, confusing the user as to why it’s gone.
-
-2. Preventable errors
-
-Preventable errors are fixable errors in nature, but with an added component that enables us to create safeguards in the system that will minimise the number of times, those errors might occur or eliminate them outright from happening.
-
-Now, another cop-out is that preventable errors might not lead to errors at all. With the right setup, we can design components that are error-proof.
-
-Examples
-
-2.1. Components that can limit user interaction to such a degree that an error is not possible
-    - disabling a “next” button on a transaction flow if funds in the wallet are insufficient to complete said transaction
-2.2. Components we can only limit partially, or can’t limit at all, but we can include “helper” elements
-    - Password setup with clear instructions on how that password must be formatted to be validated by the system (one large character, one number, one special character, no spaces, etc)
-
-3. Fixable errors
-
-- Error will happen in certain circumstances and the only thing we can do is to help our users fix them with as little friction as possible.
-- so many products and systems have poorly constructed error messages with no real context or course of action for the user
-
-Alternatively, which I think is an equally poor practice, you’ll get an error code, so that you can go to a separate website and check it there. Who exactly benefits from that? It certainly isn’t the user. If there’s a specific reason for the error and a potential way of “repairing” it, why not just display that?
-
-The structure is quite simple and applies in most circumstances — you tell the users what happened, why it happened and what they can do to fix it.
-
-Besides, even if they don’t understand the cause, you still owe them to provide an easy-to-follow course of action to resolve the issue. Asking them to take out their phone and scan a QR code that’s displayed for 2.8 seconds on the screen is not it. (That’s on you Microsoft).
-
-4. Non-fixable errors
-
-What you can do however (or rather, not you, designers, but you, as a team) is to implement proper error reporting tools into your solution. That will enable a quick and reliable way of catching those errors and introducing fixes.
-
-5. Design f*ck-ups
-
-everything from UX paths that terminate abruptly
-
-Examples:
-
-- a blank screen in an app, or a crash in a streaming service that came out of nowhere with no ability to restart said service
-
----
-
-Primary
-
-Make errors easily discoverable and map them to where they occur.
-Prevent errors wherever possible.
-Keep error messages short and precise; avoid ambiguity. Use human language and avoid jargon. Describe how to resolve the issue.
-Don’t blame the user and use appropriate language.
-Don’t provide unnecessary options.
-Secondary
-
-Use real-time validation whenever possible.
-Employ system helpers like auto-filling, autocomplete, etc.
-Autofix errors when/if possible.
-Use logical grouping or sequencing of data types.
-Explain unfamiliar concepts.
-
----
-
-6. What to do when you're not sure if you're dealing with an error?
-
-In case you're not sure if a particular action in the app is a bug, it's a good idea to check the documentation and consult the issue with a more experienced team member.
-
----
-
-One school of thought suggests using exceptions for flow control. This is not a good approach because it makes the code harder to reason about. The caller must know the implementation details and which exceptions to handle.
-
-Exceptions are for exceptional situations.
-
-Using exceptions for flow control is an approach to implement the fail-fast principle.
-
-As soon as you encounter an error in the code, you throw an exception — effectively terminating the method, and making the caller responsible for handling the exception.
-
-The problem is the caller must know which exceptions to handle. And this isn't obvious from the method signature alone.
-
-Since you already expect potential errors, why not make it explicit?
-
-You can group all application errors into two groups:
-
-- Errors you know how to handle
-- Errors you don't know how to handle
-
-Exceptions are an excellent solution for the errors you don't know how to handle. And you should catch and handle them at the lowest level possible.
-
----
-
-Don't use Result if:
-
-- If you need the exception stack trace
-- If you don't plan to handle the failure
-- If you care about performance (allocations)
-- If you can't recover from a failure - it's simpler to throw an exception
+Prevent internal errors; handle external errors.
+Keep error handling as simple as possible but complex enough for effective recovery and analysis.
+Always prioritize user-friendly error messages and recovery paths.
 
 ## 🧱 This project was built with
 
